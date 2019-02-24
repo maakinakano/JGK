@@ -11,6 +11,8 @@ public class ConvexMaker : MonoBehaviour {
 	public float HEIGHT = 30f;
 
 	public float POINT_RADIUS = 0.5f;
+	[SerializeField]
+	private Vector2 direction = Vector2.zero;
 
 	void Awake() {
 		_points = new List<Vector2> ();
@@ -20,6 +22,9 @@ public class ConvexMaker : MonoBehaviour {
 	void Start () {
 		MakePoint ();
 		GetConvex ();
+		float x = Random.Range(-WIDTH, WIDTH);
+		float y = Random.Range(-HEIGHT, HEIGHT);
+		direction = new Vector2 (x, y);
 	}
 	
 	void OnDrawGizmos(){
@@ -28,6 +33,10 @@ public class ConvexMaker : MonoBehaviour {
 			_points.ForEach (DrawPoint);
 		}
 		DrawConvex ();
+		Debug.DrawLine (Vector2.zero, direction);
+		Vector2 supportPoint = GetSupportPoint (direction);
+		Gizmos.color = Color.blue;
+		DrawPoint (supportPoint);
 	}
 
 	//データセット用のランダム点の生成
@@ -60,6 +69,35 @@ public class ConvexMaker : MonoBehaviour {
 		return a.x.CompareTo (b.x);
 	}
 
+	//サポート頂点の取得
+	public Vector2 GetSupportPoint(Vector2 direction) {
+		return GetSupportPoint(direction, 0, _convexPoints.Count-1);
+	}
+
+	//サブルーチン
+	private Vector2 GetSupportPoint(Vector2 direction, int start, int end) {
+		Vector2 startV = _convexPoints[start];
+		Vector2 endV = _convexPoints[end];
+		if(start == end){
+			return startV;
+		}
+		if(end - start == 1){
+			float dotStart = Vector2.Dot(direction, startV);
+			float dotEnd = Vector2.Dot(direction, endV);
+			return (dotStart < dotEnd) ? endV : startV;
+		}
+		int mid = (start+end)/2;
+		Vector2 midV = _convexPoints[mid];
+		Vector2 midNextV = _convexPoints[mid+1];
+		float dotMid = Vector2.Dot(direction, midV);
+		float dotMidNext = Vector2.Dot(direction, midNextV);
+		if(dotMid < dotMidNext){
+			return GetSupportPoint(direction, mid+1, end);
+		}
+		else{
+			return GetSupportPoint(direction, start, mid);
+		}
+	}
 	//凸包の取得
 	private void GetConvex(){
 		_convexPoints.Clear ();
